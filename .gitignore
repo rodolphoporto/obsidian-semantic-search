@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/embeddings_cache/
+*.egg-info/
+dist/
+.pytest_cache/
+.coverage
