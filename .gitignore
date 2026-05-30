@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .env
 data/embeddings_cache/
+data/manifest.json
+data/eval_queries.json
 *.egg-info/
 dist/
 .pytest_cache/
