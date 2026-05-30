@@ -147,6 +147,15 @@ def bulk_index(
     return success, error_count
 
 
+def delete_by_note_path(client: OpenSearch, note_path: str) -> int:
+    """Delete all chunks belonging to a note. Returns number of deleted docs."""
+    body = {"query": {"term": {"note_path": note_path}}}
+    resp = client.delete_by_query(index=settings.opensearch_index, body=body)
+    deleted = resp.get("deleted", 0)
+    log.info("chunks_deleted", note_path=note_path, deleted=deleted)
+    return deleted
+
+
 def search_bm25(client: OpenSearch, query: str, size: int = 10, filters: dict | None = None) -> list[dict]:
     """BM25 full-text search with portuguese analyzer and field boosting."""
     filter_clauses = [{"term": {k: v}} for k, v in (filters or {}).items()]

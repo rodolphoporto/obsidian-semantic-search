@@ -11,6 +11,7 @@ from obsidian_search.config import settings
 from obsidian_search.parser import parse_vault
 from obsidian_search.chunker import chunk_note
 from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25, search_knn, search_hybrid
+from obsidian_search.sync import sync as vault_sync
 from obsidian_search.embedder import embed_chunks, embed_query, load_cache
 
 console = Console()
@@ -253,6 +254,27 @@ def inspect_embed(
     rprint(f"[cyan]Norm:[/cyan] {float(np.linalg.norm(arr)):.6f}  (should be ~1.0 — normalized)")
     rprint(f"[cyan]Min/Max:[/cyan] {arr.min():.4f} / {arr.max():.4f}")
     rprint(f"[cyan]First 8 values:[/cyan] {arr[:8].tolist()}")
+
+
+@app.command()
+def sync(
+    strategy: str = typer.Option("section", help="Chunking strategy"),
+    knn: bool = typer.Option(True, "--knn/--no-knn", help="Include embeddings"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would change without indexing"),
+):
+    """Phase 8 — incremental sync: only re-index notes that changed."""
+    client = get_client()
+    if dry_run:
+        rprint("[yellow]DRY RUN — no changes will be made[/yellow]")
+
+    stats = vault_sync(client, strategy=strategy, with_knn=knn, dry_run=dry_run)
+
+    rprint(
+        f"[green]✓ {stats['added']} added[/green]  "
+        f"[yellow]~ {stats['updated']} updated[/yellow]  "
+        f"[red]✗ {stats['deleted']} deleted[/red]  "
+        f"[dim]· {stats['skipped']} skipped[/dim]"
+    )
 
 
 if __name__ == "__main__":
