@@ -11,6 +11,7 @@ from obsidian_search.config import settings
 from obsidian_search.parser import parse_vault
 from obsidian_search.chunker import chunk_note
 from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25
+from obsidian_search.embedder import embed_chunks, embed_query, load_cache
 
 console = Console()
 
@@ -128,6 +129,42 @@ def search(
         )
 
     rprint(table)
+
+
+@app.command()
+def embed(
+    folder: str = typer.Option(None, help="Vault subfolder (default: all)"),
+    strategy: str = typer.Option("section", help="Chunking strategy: section or sliding"),
+    force: bool = typer.Option(False, "--force", help="Re-embed even if cached"),
+):
+    """Phase 4 — generate embeddings for all chunks and save to local cache."""
+    folders = [folder] if folder else None
+    notes = parse_vault(settings.vault_path, folders=folders)
+
+    all_chunks = []
+    for note in notes:
+        all_chunks.extend(chunk_note(note, strategy=strategy,
+                                     max_tokens=settings.chunk_max_tokens,
+                                     overlap=settings.chunk_overlap_tokens))
+
+    rprint(f"[cyan]{len(all_chunks)} chunks to embed from {len(notes)} notes[/cyan]")
+    cache = embed_chunks(all_chunks, force=force)
+    rprint(f"[green]✓ {len(cache)} embeddings in cache[/green]")
+
+
+@app.command()
+def inspect_embed(
+    query: str = typer.Argument(..., help="Text to embed and inspect"),
+):
+    """Phase 4 — inspect embedding dimensions and values for a query."""
+    import numpy as np
+    vec = embed_query(query)
+    arr = np.array(vec)
+    rprint(f"[cyan]Query:[/cyan] {query!r}")
+    rprint(f"[cyan]Dimensions:[/cyan] {len(vec)}")
+    rprint(f"[cyan]Norm:[/cyan] {float(np.linalg.norm(arr)):.6f}  (should be ~1.0 — normalized)")
+    rprint(f"[cyan]Min/Max:[/cyan] {arr.min():.4f} / {arr.max():.4f}")
+    rprint(f"[cyan]First 8 values:[/cyan] {arr[:8].tolist()}")
 
 
 if __name__ == "__main__":
