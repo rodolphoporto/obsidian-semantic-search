@@ -10,7 +10,7 @@ from rich.console import Console
 from obsidian_search.config import settings
 from obsidian_search.parser import parse_vault
 from obsidian_search.chunker import chunk_note
-from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25
+from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25, search_knn
 from obsidian_search.embedder import embed_chunks, embed_query, load_cache
 
 console = Console()
@@ -76,10 +76,11 @@ def index(
     folder: str = typer.Option(None, help="Vault subfolder (default: all)"),
     strategy: str = typer.Option("section", help="Chunking strategy: section or sliding"),
     recreate: bool = typer.Option(False, "--recreate", help="Drop and recreate index"),
+    knn: bool = typer.Option(False, "--knn", help="Include embeddings (phase 5)"),
 ):
-    """Phase 2 — index vault notes into OpenSearch (BM25)."""
+    """Phase 2/5 — index vault notes into OpenSearch (BM25 or BM25+KNN)."""
     client = get_client()
-    create_index(client, recreate=recreate)
+    create_index(client, recreate=recreate, with_knn=knn)
 
     folders = [folder] if folder else None
     notes = parse_vault(settings.vault_path, folders=folders)
@@ -90,8 +91,14 @@ def index(
                                      max_tokens=settings.chunk_max_tokens,
                                      overlap=settings.chunk_overlap_tokens))
 
+    embeddings = None
+    if knn:
+        embeddings = load_cache()
+        covered = sum(1 for c in all_chunks if c.chunk_id in embeddings)
+        rprint(f"[cyan]Embeddings: {covered}/{len(all_chunks)} chunks in cache[/cyan]")
+
     rprint(f"[cyan]Indexing {len(all_chunks)} chunks from {len(notes)} notes...[/cyan]")
-    success, errors = bulk_index(client, all_chunks)
+    success, errors = bulk_index(client, all_chunks, embeddings=embeddings)
     rprint(f"[green]✓ {success} chunks indexed[/green]" + (f" [red]{errors} errors[/red]" if errors else ""))
 
 
@@ -126,6 +133,43 @@ def search(
             s["note_title"],
             s.get("heading_path", "")[:25],
             excerpt,
+        )
+
+    rprint(table)
+
+
+@app.command()
+def search_vec(
+    query: str = typer.Argument(..., help="Search query"),
+    size: int = typer.Option(5, help="Number of results"),
+    area: str = typer.Option(None, help="Filter by area"),
+):
+    """Phase 5 — KNN vector search using HNSW."""
+    from obsidian_search.embedder import embed_query
+    client = get_client()
+    filters = {"area": area} if area else None
+    vec = embed_query(query)
+    hits = search_knn(client, vec, size=size, filters=filters)
+
+    if not hits:
+        rprint("[yellow]No results.[/yellow]")
+        return
+
+    table = Table(title=f'KNN results for "{query}"', show_lines=True)
+    table.add_column("#", width=3)
+    table.add_column("Score", width=6)
+    table.add_column("Note", style="cyan", max_width=35)
+    table.add_column("Heading", max_width=25)
+    table.add_column("Excerpt", max_width=50)
+
+    for i, hit in enumerate(hits, 1):
+        s = hit["_source"]
+        table.add_row(
+            str(i),
+            f"{hit['_score']:.4f}",
+            s["note_title"],
+            s.get("heading_path", "")[:25],
+            s["text"][:120].replace("\n", " "),
         )
 
     rprint(table)
