@@ -10,7 +10,7 @@ from rich.console import Console
 from obsidian_search.config import settings
 from obsidian_search.parser import parse_vault
 from obsidian_search.chunker import chunk_note
-from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25, search_knn
+from obsidian_search.indexer import get_client, create_index, bulk_index, search_bm25, search_knn, search_hybrid
 from obsidian_search.embedder import embed_chunks, embed_query, load_cache
 
 console = Console()
@@ -170,6 +170,50 @@ def search_vec(
             s["note_title"],
             s.get("heading_path", "")[:25],
             s["text"][:120].replace("\n", " "),
+        )
+
+    rprint(table)
+
+
+@app.command()
+def search_mix(
+    query: str = typer.Argument(..., help="Search query"),
+    size: int = typer.Option(5, help="Number of results"),
+    area: str = typer.Option(None, help="Filter by area"),
+    rrf_k: int = typer.Option(60, help="RRF constant (higher = less weight on top ranks)"),
+):
+    """Phase 6 — Hybrid search: BM25 + KNN fused with Reciprocal Rank Fusion."""
+    from obsidian_search.embedder import embed_query
+    client = get_client()
+    filters = {"area": area} if area else None
+    vec = embed_query(query)
+    hits = search_hybrid(client, query, vec, size=size, filters=filters, rrf_k=rrf_k)
+
+    if not hits:
+        rprint("[yellow]No results.[/yellow]")
+        return
+
+    table = Table(title=f'Hybrid results for "{query}"', show_lines=True)
+    table.add_column("#", width=3)
+    table.add_column("RRF", width=7)
+    table.add_column("BM25↑", width=5)
+    table.add_column("KNN↑", width=5)
+    table.add_column("Note", style="cyan", max_width=30)
+    table.add_column("Heading", max_width=20)
+    table.add_column("Excerpt", max_width=45)
+
+    for i, hit in enumerate(hits, 1):
+        s = hit["_source"]
+        bm25_r = str(hit["_bm25_rank"]) if hit["_bm25_rank"] else "—"
+        knn_r  = str(hit["_knn_rank"])  if hit["_knn_rank"]  else "—"
+        table.add_row(
+            str(i),
+            f"{hit['_score']:.5f}",
+            bm25_r,
+            knn_r,
+            s["note_title"],
+            s.get("heading_path", "")[:20],
+            s["text"][:110].replace("\n", " "),
         )
 
     rprint(table)

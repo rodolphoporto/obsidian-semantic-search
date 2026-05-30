@@ -189,3 +189,73 @@ def search_knn(
         "_source": {"excludes": ["embedding"]},
     }
     return client.search(index=settings.opensearch_index, body=body)["hits"]["hits"]
+
+
+def _reciprocal_rank_fusion(
+    bm25_hits: list[dict],
+    knn_hits: list[dict],
+    k: int = 60,
+) -> list[dict]:
+    """
+    Combine BM25 and KNN results via Reciprocal Rank Fusion.
+
+    Why RRF instead of score sum:
+      BM25 scores (~20-35) and KNN scores (0.0-1.0) live on different scales.
+      Summing them directly lets BM25 dominate every time.
+      RRF uses rank position — 1st place always contributes 1/(k+1) regardless
+      of the raw score, making the fusion scale-invariant.
+
+    k=60 is the standard constant from the original RRF paper (Cormack 2009).
+    Higher k reduces the bonus for top-ranked documents.
+    """
+    scores: dict[str, float] = {}
+    sources: dict[str, dict] = {}
+    bm25_rank: dict[str, int] = {}
+    knn_rank: dict[str, int] = {}
+
+    for rank, hit in enumerate(bm25_hits, start=1):
+        doc_id = hit["_id"]
+        scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
+        sources[doc_id] = hit["_source"]
+        bm25_rank[doc_id] = rank
+
+    for rank, hit in enumerate(knn_hits, start=1):
+        doc_id = hit["_id"]
+        scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
+        sources[doc_id] = hit["_source"]
+        knn_rank[doc_id] = rank
+
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+    return [
+        {
+            "_id": doc_id,
+            "_score": rrf_score,
+            "_bm25_rank": bm25_rank.get(doc_id),
+            "_knn_rank": knn_rank.get(doc_id),
+            "_source": sources[doc_id],
+        }
+        for doc_id, rrf_score in ranked
+    ]
+
+
+def search_hybrid(
+    client: OpenSearch,
+    query: str,
+    query_vector: list[float],
+    size: int = 10,
+    filters: dict | None = None,
+    rrf_k: int = 60,
+    candidate_multiplier: int = 3,
+) -> list[dict]:
+    """
+    Hybrid search: BM25 + KNN fused with Reciprocal Rank Fusion.
+
+    Fetches size * candidate_multiplier from each source before fusion
+    to avoid missing relevant docs that ranked low in one method.
+    """
+    candidates = size * candidate_multiplier
+    bm25_hits = search_bm25(client, query, size=candidates, filters=filters)
+    knn_hits = search_knn(client, query_vector, size=candidates, filters=filters)
+    fused = _reciprocal_rank_fusion(bm25_hits, knn_hits, k=rrf_k)
+    return fused[:size]
