@@ -1,0 +1,154 @@
+[
+  {
+    "id": "q01",
+    "query": "como lidar com lentidão em chamadas de LLM",
+    "area": "backend",
+    "expected_titles": ["LLM em Produção - Timeout HTTP, Streaming SSE e Async Job"],
+    "notes": "query semântica — não contém os termos exatos da nota"
+  },
+  {
+    "id": "q02",
+    "query": "paginação eficiente em banco de dados grande",
+    "area": "backend",
+    "expected_titles": ["Keyset Pagination - Ultra-Fast no Spring Boot"],
+    "notes": "conceito técnico sem o termo 'keyset' na query"
+  },
+  {
+    "id": "q03",
+    "query": "pool de conexões esgotado spring boot",
+    "area": "backend",
+    "expected_titles": ["HikariCP - Pool Exhaustion e Transaction Boundary"],
+    "notes": "terminologia técnica exata — BM25 deve acertar"
+  },
+  {
+    "id": "q04",
+    "query": "jwt refresh token revogação segurança",
+    "area": "backend",
+    "expected_titles": ["JWT Auth - Padrões Corretos e Armadilhas de Segurança"],
+    "notes": "termos técnicos — BM25 deve acertar"
+  },
+  {
+    "id": "q05",
+    "query": "como configurar redis para não ter ponto de falha único",
+    "area": "backend",
+    "expected_titles": ["Redis Sentinel - Alta Disponibilidade em Produção"],
+    "notes": "query semântica — não menciona sentinel nem HA"
+  },
+  {
+    "id": "q06",
+    "query": "circuit breaker quando usar versus retry",
+    "area": "backend",
+    "expected_titles": ["LLM em Produção - Timeout HTTP, Streaming SSE e Async Job"],
+    "notes": "conceito presente na nota mas não é o título principal"
+  },
+  {
+    "id": "q07",
+    "query": "fila de mensagens mortas retentativas aws",
+    "area": "backend",
+    "expected_titles": ["AWS SQS DLQ - Retentativas e Redrive"],
+    "notes": "dead letter queue — terminologia mista PT-BR e EN"
+  },
+  {
+    "id": "q08",
+    "query": "interceptar tráfego https no emulador flutter android",
+    "area": "mobile",
+    "expected_titles": ["mitmproxy - Interceptando HTTPS em Flutter (Android e iOS)"],
+    "notes": "query técnica específica — BM25 deve acertar por termos exatos"
+  },
+  {
+    "id": "q09",
+    "query": "como o flutter roda dentro de um app android nativo",
+    "area": "mobile",
+    "expected_titles": ["Veloe Mobile - Arquitetura de Dependências"],
+    "notes": "add-to-app pattern — query em linguagem natural"
+  },
+  {
+    "id": "q10",
+    "query": "estratégia de chunking para indexação vetorial",
+    "area": "geral",
+    "expected_titles": [
+      "AI Platform Engineer vs AI App Developer - Rubrica de Skills 2026",
+      "Qualidade de Dados em Search Semântico - Garbage In Garbage Out Revisitado"
+    ],
+    "notes": "query do próprio domínio do projeto — KNN deve se sair melhor"
+  },
+  {
+    "id": "q11",
+    "query": "embeddings para busca semântica em português",
+    "area": "geral",
+    "expected_titles": ["AI Platform Engineer vs AI App Developer - Rubrica de Skills 2026"],
+    "notes": "query semântica sobre o tema principal do projeto"
+  },
+  {
+    "id": "q12",
+    "query": "dado ruim produz resultado errado em IA",
+    "area": "geral",
+    "expected_titles": ["Qualidade de Dados em Search Semântico - Garbage In Garbage Out Revisitado"],
+    "notes": "query conceitual sem os termos exatos da nota"
+  },
+  {
+    "id": "q13",
+    "query": "lambda sem servidor arquitetura pay per use",
+    "area": "devops",
+    "expected_titles": ["AWS Serverless - Arquitetura SaaS com Lambda e DynamoDB"],
+    "notes": "terminologia mista — serverless/sem servidor"
+  },
+  {
+    "id": "q14",
+    "query": "como rodar modelos de linguagem localmente sem internet",
+    "area": "devops",
+    "expected_titles": [
+      "LLMs Locais para Código em 2026 - Guia Prático por Hardware",
+      "Foundation Models - O Novo Linux do Desenvolvimento com IA"
+    ],
+    "notes": "query semântica — KNN deve superar BM25"
+  },
+  {
+    "id": "q15",
+    "query": "gerenciar contexto de forma eficiente no claude code",
+    "area": "ferramentas",
+    "expected_titles": [
+      "Claude Code - Gerenciamento de Contexto e Boas Práticas",
+      "Claude Code - 3 Ajustes que Recuperam 80% da Cota"
+    ],
+    "notes": "query direta sobre ferramenta — BM25 e KNN devem acertar"
+  },
+  {
+    "id": "q16",
+    "query": "trabalhar em múltiplas branches ao mesmo tempo sem conflito",
+    "area": "devops",
+    "expected_titles": [
+      "Git Worktrees - Paralelismo sem Conflito",
+      "Claude Code Worktrees - Paralelismo com Git e Sub-Agents"
+    ],
+    "notes": "query semântica — não menciona worktrees"
+  },
+  {
+    "id": "q17",
+    "query": "o que diferenciar sênior de pleno em entrevista técnica",
+    "area": "geral",
+    "expected_titles": ["Entrevistas Técnicas Backend - Padrões de Aprovação e Rejeição"],
+    "notes": "query semântica sobre carreira — KNN deve acertar"
+  },
+  {
+    "id": "q18",
+    "query": "clean code quando as boas práticas fazem mal",
+    "area": "geral",
+    "expected_titles": ["Clean Code - 10 Práticas Populares que Fazem Mais Mal do que Bem"],
+    "notes": "query próxima do título — BM25 deve acertar"
+  },
+  {
+    "id": "q19",
+    "query": "como o transformer processa uma frase passo a passo",
+    "area": "geral",
+    "expected_titles": ["Transformer - Forward Pass Passo a Passo"],
+    "notes": "query descritiva do conteúdo — ambos devem acertar"
+  },
+  {
+    "id": "q20",
+    "query": "mensageria fan-out publicar para múltiplos consumidores",
+    "area": "backend",
+    "expected_titles": ["AWS SQS + SNS - Mensageria Assíncrona com LocalStack"],
+    "notes": "fan-out pattern — SNS não está na query"
+  }
+]
